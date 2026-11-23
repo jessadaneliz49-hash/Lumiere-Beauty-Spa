@@ -1242,16 +1242,32 @@ window.addEventListener("scroll", function() {
   });
 });
 
-// APPOINTMENT FORM DEMO
+
+// APPOINTMENT FORM - SUPABASE
 const dateInput = document.getElementById("appointmentDate");
 const today = new Date();
+
 const localToday = new Date(
   today.getTime() - today.getTimezoneOffset() * 60000
 ).toISOString().split("T")[0];
 
 dateInput.min = localToday;
 
-document.getElementById("bookingForm").addEventListener("submit", function(e) {
+function to24HourTime(value) {
+  const [time, period] = value.split(" ");
+  let [hours, minutes] = time.split(":").map(Number);
+
+  if (period === "PM" && hours !== 12) hours += 12;
+  if (period === "AM" && hours === 12) hours = 0;
+
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:00`;
+}
+
+const bookingForm = document.getElementById("bookingForm");
+const submitButton = bookingForm.querySelector('button[type="submit"]');
+const formMessage = document.getElementById("formMessage");
+
+bookingForm.addEventListener("submit", async function(e) {
   e.preventDefault();
 
   const name = document.getElementById("customerName").value.trim();
@@ -1262,28 +1278,45 @@ document.getElementById("bookingForm").addEventListener("submit", function(e) {
   const notes = document.getElementById("notes").value.trim();
 
   if (!name || !phone || !service || !date || !time) {
+    formMessage.textContent = "Please complete all required fields.";
     return;
   }
 
-  const message =
-    "Thank you, " + name + "! Your appointment request for " +
-    service + " on " + date + " at " + time +
-    " has been prepared. This is a demo form only. Please contact the salon to confirm your appointment.";
+  submitButton.disabled = true;
+  submitButton.textContent = "Submitting...";
+  formMessage.textContent = "Saving your appointment...";
 
-  document.getElementById("formMessage").textContent = message;
+  try {
+    const { error } = await lumiereSupabase
+      .from("appointments")
+      .insert([{
+        customer_name: name,
+        customer_phone: phone,
+        service: service,
+        appointment_date: date,
+        appointment_time: to24HourTime(time),
+        customer_notes: notes,
+        status: "Pending"
+      }]);
 
-  console.log("Demo appointment:", {
-    name: name,
-    phone: phone,
-    service: service,
-    date: date,
-    time: time,
-    notes: notes
-  });
+    if (error) throw error;
 
-  this.reset();
-  dateInput.min = localToday;
+    formMessage.textContent =
+      `Thank you, ${name}! Your appointment request has been saved. The salon will contact you to confirm.`;
+
+    bookingForm.reset();
+    dateInput.min = localToday;
+
+  } catch (error) {
+    console.error("Supabase booking error:", error);
+    formMessage.textContent =
+      "Sorry, we couldn't save your appointment. Please try again.";
+  } finally {
+    submitButton.disabled = false;
+    submitButton.textContent = "Submit Appointment Request";
+  }
 });
+
 </script>
 
 </body>
