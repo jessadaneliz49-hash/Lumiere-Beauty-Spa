@@ -809,6 +809,18 @@ footer p {
   }
 }
 </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+const LUMIERE_SUPABASE_URL = "https://qrmrtklzrpvoagfxalkn.supabase.co";
+
+const LUMIERE_SUPABASE_KEY = "sb_publishable_QAQthmCxeZu_8fYtcA7CrA_XwuU-FWf";
+
+const lumiereSupabase = supabase.createClient(
+  LUMIERE_SUPABASE_URL,
+  LUMIERE_SUPABASE_KEY
+);
+</script>
 </head>
 
 <body class="loading">
